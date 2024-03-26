@@ -7,38 +7,63 @@ let gameBoard = (function () {
 
   const getBoard = () => board;
 
-  //Console print method
-  const printBoard = () => console.log(board);
-
-  return { getBoard, printBoard };
+  return { getBoard };
 })();
 
 const player = {
   player1: {
+    name: 'Player 1',
     mark: 'X',
   },
   player2: {
+    name: 'Player 2',
     mark: 'O',
   },
 };
 
-let game = (function (board) {
+let turnCount = 0;
+
+let game = function (board) {
   let activePlayer = player.player1;
 
-  const switchPlayer = (activePlayer) => {
+  let winCondition = checkWinner(board);
+
+  console.log(`${activePlayer.name}'s turn.`);
+
+  const switchPlayer = () => {
     activePlayer =
-      activePlayer === player.player1 ? player.player2 : player.player1;
+      activePlayer === player.player2 ? player.player1 : player.player2;
   };
 
   const makeMove = (first, second) => {
-    switchPlayer();
     if (board[first][second] === 0) {
       board[first].splice(second, 1, activePlayer.mark);
+      switchPlayer();
+      turnCount++;
     }
+
+    console.log(`${activePlayer.name}'s turn.`);
+    console.log(gameBoard.getBoard()[0]);
+    console.log(gameBoard.getBoard()[1]);
+    console.log(gameBoard.getBoard()[2]);
+    winCondition = checkWinner(board);
   };
 
-  return { makeMove };
-})(gameBoard.getBoard());
+  while (turnCount < 9) {
+    if (winCondition === true) {
+      console.log('Round is finished');
+      return;
+    }
+
+    makeMove(
+      prompt('Enter the X coordinate'),
+      prompt('Enter the Y coordinate')
+    );
+  }
+
+  console.log('Tie');
+  return;
+};
 
 function checkWinner(board) {
   let counter = 0;
@@ -72,13 +97,22 @@ function checkWinner(board) {
     checkCombination(boardColumn, 3);
     if (counter == 0) {
       checkCombination(boardDiagonal, 2);
-      console.log(`Diagonal ${counter}`);
+      if (counter == 0) {
+        return false;
+      } else {
+        console.log(`Column ${counter}`);
+        return true;
+      }
     } else {
-      console.log(`Column ${counter}`);
+      console.log(`Diagonal ${counter}`);
+      return true;
     }
   } else {
     console.log(`Row ${counter}`);
+    return true;
   }
 }
 
-checkWinner(gameBoard.getBoard());
+function playRound() {
+  game(gameBoard.getBoard());
+}
