@@ -1,28 +1,38 @@
-let gameBoard = (function () {
+const gameBoard = (function () {
   let board = [
     [0, 0, 0],
     [0, 0, 0],
     [0, 0, 0],
   ];
-  let boardColumn = [[], [], []];
-  let boardDiagonal = [[], []];
+  let boardColumn = [
+    [0, 0, 0],
+    [0, 0, 0],
+    [0, 0, 0],
+  ];
+  let boardDiagonal = [
+    [0, 0, 0],
+    [0, 0, 0],
+  ];
 
-  for (let i = 0; i < 3; i++) {
-    for (let j = 0; j < 3; j++) {
-      boardColumn[i].push(board[j][i]);
-      if (i === j) boardDiagonal[0].push(board[i][j]);
-      if (i + j === 2) boardDiagonal[1].push(board[i][j]);
+  const updateBoards = () => {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        boardColumn[i].splice(j, 1, board[j][i]);
+        if (i === j) boardDiagonal[0].splice(j, 1, board[i][j]);
+        if (i + j === 2) boardDiagonal[1].splice(j, 1, board[i][j]);
+      }
     }
-  }
+  };
 
   const getBoard = () => board;
   const getBoardColumn = () => boardColumn;
   const getBoardDiagonal = () => boardDiagonal;
 
-  return { getBoard, getBoardColumn, getBoardDiagonal };
+  return { getBoard, getBoardColumn, getBoardDiagonal, updateBoards };
 })();
 
-let game = function (board) {
+const game = (function () {
+  const board = gameBoard.getBoard();
   const player = {
     player1: {
       name: 'Player 1',
@@ -36,9 +46,9 @@ let game = function (board) {
 
   let activePlayer = player.player1;
   let turnCount = 0;
-  let winCondition;
 
-  console.log(`${activePlayer.name}'s turn.`);
+  const getActivePlayer = () => activePlayer;
+  const getTurnCount = () => turnCount;
 
   const switchPlayer = () => {
     activePlayer =
@@ -52,37 +62,24 @@ let game = function (board) {
       turnCount++;
     }
 
-    console.log(`${activePlayer.name}'s turn.`);
-    console.log(gameBoard.getBoard()[0]);
-    console.log(gameBoard.getBoard()[1]);
-    console.log(gameBoard.getBoard()[2]);
+    console.log(board[0]);
+    console.log(board[1]);
+    console.log(board[2]);
 
-    checkWinner.checkCombination(gameBoard.getBoard(), 3);
-    winCondition = checkWinner.checkWinCondition();
+    checkWinner.checkCombination(board, 3);
+    checkWinner.checkWinCondition();
   };
 
-  while (turnCount < 9) {
-    if (winCondition === true) {
-      console.log('Round is finished');
-      return;
-    }
+  return { getActivePlayer, getTurnCount, switchPlayer, makeMove };
+})();
 
-    makeMove(
-      prompt('Enter the X coordinate'),
-      prompt('Enter the Y coordinate')
-    );
-  }
-
-  console.log('Tie');
-  return;
-};
-
-let checkWinner = (function () {
+const checkWinner = (function () {
   let winner = 0;
   let numNought;
   let numCross;
+  const getWinner = () => winner;
 
-  let checkCombination = (line, j) => {
+  const checkCombination = (line, j) => {
     for (let i = 0; i < j; i++) {
       numCross = line[i].filter((item) => item === 'X');
       numNought = line[i].filter((item) => item === 'O');
@@ -95,7 +92,7 @@ let checkWinner = (function () {
     }
   };
 
-  let checkWinCondition = () => {
+  const checkWinCondition = () => {
     checkCombination(gameBoard.getBoard(), 3);
     if (winner == 0) {
       checkCombination(gameBoard.getBoardColumn(), 3);
@@ -117,9 +114,24 @@ let checkWinner = (function () {
     }
   };
 
-  return { checkCombination, checkWinCondition };
+  return { checkCombination, checkWinCondition, getWinner };
 })();
 
 function playRound() {
-  game(gameBoard.getBoard());
+  while (game.getTurnCount() < 9 && checkWinner.checkWinCondition() !== true) {
+    console.log(`${game.getActivePlayer().name}'s turn.`);
+    game.makeMove(
+      prompt('Enter the X coordinate'),
+      prompt('Enter the Y coordinate')
+    );
+    gameBoard.updateBoards();
+  }
+
+  if (checkWinner.getWinner() !== 0) {
+    console.log('Round is finished');
+    return;
+  }
+
+  console.log('Tie');
+  return;
 }
