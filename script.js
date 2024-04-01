@@ -55,9 +55,22 @@ const game = (function () {
       activePlayer === player.player2 ? player.player1 : player.player2;
   };
 
-  const makeMove = (first, second) => {
-    if (board[first][second] === 0) {
-      board[first].splice(second, 1, activePlayer.mark);
+  const makeMove = (element) => {
+    const id = element;
+
+    if (id >= 0 && id <= 2 && board[0][id] === 0) {
+      board[0].splice(id, 1, activePlayer.mark);
+      display.cell[id].textContent = activePlayer.mark;
+      switchPlayer();
+      turnCount++;
+    } else if (id >= 3 && id <= 5 && board[1][id - 3] === 0) {
+      board[1].splice(id - 3, 1, activePlayer.mark);
+      display.cell[id].textContent = activePlayer.mark;
+      switchPlayer();
+      turnCount++;
+    } else if (id >= 6 && id <= 8 && board[2][id - 6] === 0) {
+      board[2].splice(id - 6, 1, activePlayer.mark);
+      display.cell[id].textContent = activePlayer.mark;
       switchPlayer();
       turnCount++;
     }
@@ -66,8 +79,8 @@ const game = (function () {
     console.log(board[1]);
     console.log(board[2]);
 
-    checkWinner.checkCombination(board, 3);
-    checkWinner.checkWinCondition();
+    gameBoard.updateBoards();
+    playRound();
   };
 
   return { getActivePlayer, getTurnCount, switchPlayer, makeMove };
@@ -99,7 +112,11 @@ const checkWinner = (function () {
       if (winner == 0) {
         checkCombination(gameBoard.getBoardDiagonal(), 2);
         if (winner == 0) {
-          return false;
+          if (game.getTurnCount() == 9) {
+            return true;
+          } else {
+            return false;
+          }
         } else {
           console.log(`Diagonal ${winner}`);
           return true;
@@ -118,20 +135,35 @@ const checkWinner = (function () {
 })();
 
 function playRound() {
-  while (game.getTurnCount() < 9 && checkWinner.checkWinCondition() !== true) {
+  if (game.getTurnCount() <= 9 && checkWinner.checkWinCondition() !== true) {
+    display.result.textContent = `${game.getActivePlayer().name}'s turn.`;
     console.log(`${game.getActivePlayer().name}'s turn.`);
-    game.makeMove(
-      prompt('Enter the X coordinate'),
-      prompt('Enter the Y coordinate')
-    );
-    gameBoard.updateBoards();
   }
 
   if (checkWinner.getWinner() !== 0) {
     console.log('Round is finished');
     return;
+  } else if (checkWinner.getWinner() === 0 && game.getTurnCount() == 9) {
+    console.log('Tie');
+    console.log('Round is finished');
   }
 
-  console.log('Tie');
   return;
 }
+
+const display = (function () {
+  const cell = document.querySelectorAll('.cell');
+  const startBtn = document.querySelector('button');
+  const result = document.querySelector('p.result');
+
+  startBtn.addEventListener('click', () => {
+    cell.forEach((item) =>
+      item.addEventListener('click', () =>
+        game.makeMove(item.getAttribute('id'))
+      )
+    );
+    startBtn.textContent = 'New game';
+  });
+
+  return { cell, startBtn, result };
+})();
