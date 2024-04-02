@@ -35,6 +35,17 @@ const gameBoard = (function () {
     }
   };
 
+  const fillUp = () => {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        board[i].splice(j, 1, '-');
+        boardColumn[i].splice(j, 1, '-');
+        if (i === j) boardDiagonal[0].splice(j, 1, '-');
+        if (i + j === 2) boardDiagonal[1].splice(j, 1, '-');
+      }
+    }
+  };
+
   const getBoard = () => board;
   const getBoardColumn = () => boardColumn;
   const getBoardDiagonal = () => boardDiagonal;
@@ -45,6 +56,7 @@ const gameBoard = (function () {
     getBoardDiagonal,
     updateBoards,
     cleanBoards,
+    fillUp,
   };
 })();
 
@@ -137,14 +149,21 @@ const checkWinner = (function () {
 
     if (winner == 0) {
       if (game.getTurnCount() == 9) {
+        gameBoard.fillUp();
         display.result.textContent = 'Tie!';
+
         return true;
       } else {
         return false;
       }
     } else {
+      gameBoard.fillUp();
       game.switchPlayer();
-      display.result.textContent = `${game.getActivePlayer().name} has won!`;
+      if (winner == 1) {
+        display.result.textContent = 'Player 1 has won!';
+      } else {
+        display.result.textContent = 'Player 2 has won!';
+      }
       return true;
     }
   };
