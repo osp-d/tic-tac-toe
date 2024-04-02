@@ -24,11 +24,28 @@ const gameBoard = (function () {
     }
   };
 
+  const cleanBoards = () => {
+    for (let i = 0; i < 3; i++) {
+      for (let j = 0; j < 3; j++) {
+        board[i].splice(j, 1, 0);
+        boardColumn[i].splice(j, 1, 0);
+        if (i === j) boardDiagonal[0].splice(j, 1, 0);
+        if (i + j === 2) boardDiagonal[1].splice(j, 1, 0);
+      }
+    }
+  };
+
   const getBoard = () => board;
   const getBoardColumn = () => boardColumn;
   const getBoardDiagonal = () => boardDiagonal;
 
-  return { getBoard, getBoardColumn, getBoardDiagonal, updateBoards };
+  return {
+    getBoard,
+    getBoardColumn,
+    getBoardDiagonal,
+    updateBoards,
+    cleanBoards,
+  };
 })();
 
 const game = (function () {
@@ -48,11 +65,13 @@ const game = (function () {
   let turnCount = 0;
 
   const getActivePlayer = () => activePlayer;
+  const resetActivePlayer = () => (activePlayer = player.player1);
   const getTurnCount = () => turnCount;
+  const resetTurnCount = () => (turnCount = 0);
 
   const switchPlayer = () => {
     activePlayer =
-      activePlayer === player.player2 ? player.player1 : player.player2;
+      getActivePlayer() === player.player2 ? player.player1 : player.player2;
   };
 
   const makeMove = (element) => {
@@ -75,22 +94,28 @@ const game = (function () {
       turnCount++;
     }
 
-    console.log(board[0]);
-    console.log(board[1]);
-    console.log(board[2]);
-
     gameBoard.updateBoards();
-    playRound();
+
+    if (game.getTurnCount() <= 9 && checkWinner.checkWinCondition() !== true) {
+      display.result.textContent = `${game.getActivePlayer().name}'s turn.`;
+    }
   };
 
-  return { getActivePlayer, getTurnCount, switchPlayer, makeMove };
+  return {
+    getActivePlayer,
+    getTurnCount,
+    switchPlayer,
+    makeMove,
+    resetTurnCount,
+    resetActivePlayer,
+  };
 })();
 
 const checkWinner = (function () {
   let winner = 0;
   let numNought;
   let numCross;
-  const getWinner = () => winner;
+  const resetWinner = () => (winner = 0);
 
   const checkCombination = (line, j) => {
     for (let i = 0; i < j; i++) {
@@ -107,63 +132,48 @@ const checkWinner = (function () {
 
   const checkWinCondition = () => {
     checkCombination(gameBoard.getBoard(), 3);
+    checkCombination(gameBoard.getBoardColumn(), 3);
+    checkCombination(gameBoard.getBoardDiagonal(), 2);
+
     if (winner == 0) {
-      checkCombination(gameBoard.getBoardColumn(), 3);
-      if (winner == 0) {
-        checkCombination(gameBoard.getBoardDiagonal(), 2);
-        if (winner == 0) {
-          if (game.getTurnCount() == 9) {
-            return true;
-          } else {
-            return false;
-          }
-        } else {
-          console.log(`Diagonal ${winner}`);
-          return true;
-        }
-      } else {
-        console.log(`Column ${winner}`);
+      if (game.getTurnCount() == 9) {
+        display.result.textContent = 'Tie!';
         return true;
+      } else {
+        return false;
       }
     } else {
-      console.log(`Row ${winner}`);
+      game.switchPlayer();
+      display.result.textContent = `${game.getActivePlayer().name} has won!`;
       return true;
     }
   };
 
-  return { checkCombination, checkWinCondition, getWinner };
+  return { checkWinCondition, resetWinner };
 })();
-
-function playRound() {
-  if (game.getTurnCount() <= 9 && checkWinner.checkWinCondition() !== true) {
-    display.result.textContent = `${game.getActivePlayer().name}'s turn.`;
-    console.log(`${game.getActivePlayer().name}'s turn.`);
-  }
-
-  if (checkWinner.getWinner() !== 0) {
-    console.log('Round is finished');
-    return;
-  } else if (checkWinner.getWinner() === 0 && game.getTurnCount() == 9) {
-    console.log('Tie');
-    console.log('Round is finished');
-  }
-
-  return;
-}
 
 const display = (function () {
   const cell = document.querySelectorAll('.cell');
   const startBtn = document.querySelector('button');
   const result = document.querySelector('p.result');
 
-  startBtn.addEventListener('click', () => {
-    cell.forEach((item) =>
-      item.addEventListener('click', () =>
-        game.makeMove(item.getAttribute('id'))
-      )
+  cell.forEach((item) => {
+    item.addEventListener('click', () =>
+      game.makeMove(item.getAttribute('id'))
     );
-    startBtn.textContent = 'New game';
   });
 
-  return { cell, startBtn, result };
+  startBtn.addEventListener('click', () => {
+    cell.forEach((item) => {
+      item.textContent = '';
+    });
+    checkWinner.resetWinner();
+    game.resetTurnCount();
+    game.resetActivePlayer();
+    result.textContent = `${game.getActivePlayer().name}'s turn.`;
+    startBtn.textContent = 'New game';
+    gameBoard.cleanBoards();
+  });
+
+  return { cell, result };
 })();
